@@ -87,6 +87,7 @@ export default class Dashboard extends React.Component {
       });
       this.setState({ addModal: false });
     } catch (e) {
+      console.log(e);
       alert(e.message);
     }
   }
