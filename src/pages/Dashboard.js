@@ -139,7 +139,7 @@ export default class Dashboard extends React.Component {
                           const ext = name[name.length - 1].toLowerCase();
                           return <FileIcon extension={ext} {...defaultStyles[ext]} />
                         })()} {d.name}</td>
-                        <td>{prettyBytes(d.size)}</td>
+                        <td>{prettyBytes(parseInt(d.size, 10))}</td>
                         <td>{d.user.username}</td>
                         <td style={{ width: '25%' }}>
                           <ButtonGroup size="sm">
