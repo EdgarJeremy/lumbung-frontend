@@ -120,7 +120,7 @@ export default class Dashboard extends React.Component {
               </Navbar>
             </div>
             {files ? (
-              files.length ?
+              files.total ?
                 (<table className="table">
                   <thead>
                     <tr>
