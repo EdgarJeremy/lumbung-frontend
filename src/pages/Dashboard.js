@@ -235,7 +235,7 @@ class Qualities extends React.Component {
     const { collapse } = this.state;
     return (
       <div style={{ marginLeft: 40 }}>
-        <Badge onClick={() => d.qualities.length > 0 && this.setState({ collapse: !collapse })} pill outline theme={d.qualities.length > 0 ? 'success' : 'warning'}>{d.qualities.length > 0 ? 'Ragam Kualitas Tersedia' : 'Kualitas Dalam Proses'}</Badge>
+        <Badge style={{ cursor: 'pointer' }} onClick={() => d.qualities.length > 0 && this.setState({ collapse: !collapse })} pill outline theme={d.qualities.length > 0 ? 'success' : 'warning'}>{d.qualities.length > 0 ? 'Ragam Kualitas Tersedia' : 'Kualitas Dalam Proses'}</Badge>
         <Collapse open={collapse}>
           <table className="table" style={{ marginTop: 5, fontSize: 10, width: '80%' }}>
             {d.qualities.map((q, i) => (
