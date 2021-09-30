@@ -21,6 +21,7 @@ import {
   FormGroup,
   Form,
   Progress,
+  Badge
 } from "shards-react";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -29,6 +30,7 @@ import axios from 'axios';
 import copy from 'clipboard-copy';
 import { store } from 'react-notifications-component';
 import prettyBytes from 'pretty-bytes';
+import isVideo from 'is-video';
 
 export default class Dashboard extends React.Component {
   state = {
@@ -64,10 +66,12 @@ export default class Dashboard extends React.Component {
           },
           name: {
             $iLike: `%${q.trim()}%`
-          }
+          },
+          fileId: null
         },
       });
       this.setState({ files });
+      console.log(files);
     } catch (e) { alert(e.message) }
   }
   async onUpload(e) {
@@ -87,7 +91,6 @@ export default class Dashboard extends React.Component {
       });
       this.setState({ addModal: false });
     } catch (e) {
-      console.log(e);
       alert(e.message);
     }
   }
@@ -134,11 +137,16 @@ export default class Dashboard extends React.Component {
                   <tbody>
                     {files.data.map((d, i) => (
                       <tr key={i}>
-                        <td>{(() => {
-                          const name = d.name.split('.');
-                          const ext = name[name.length - 1].toLowerCase();
-                          return <FileIcon extension={ext} {...defaultStyles[ext]} />
-                        })()} {d.name}</td>
+                        <td>
+                          <div>
+                            {(() => {
+                              const name = d.name.split('.');
+                              const ext = name[name.length - 1].toLowerCase();
+                              return <FileIcon extension={ext} {...defaultStyles[ext]} />
+                            })()} <span style={{ marginLeft: 10 }}>{d.name}</span>
+                          </div>
+                          {isVideo(d.name) && (<Qualities d={d} />)}
+                        </td>
                         <td>{prettyBytes(parseInt(d.size, 10))}</td>
                         <td>{d.user.username}</td>
                         <td style={{ width: '25%' }}>
@@ -213,6 +221,54 @@ export default class Dashboard extends React.Component {
             </Form>
           </ModalBody>
         </Modal>
+      </div>
+    )
+  }
+}
+
+class Qualities extends React.Component {
+  state = {
+    collapse: false
+  }
+  render() {
+    const { d } = this.props;
+    const { collapse } = this.state;
+    return (
+      <div style={{ marginLeft: 40 }}>
+        <Badge onClick={() => d.qualities.length > 0 && this.setState({ collapse: !collapse })} pill outline theme={d.qualities.length > 0 ? 'success' : 'warning'}>{d.qualities.length > 0 ? 'Ragam Kualitas Tersedia' : 'Kualitas Dalam Proses'}</Badge>
+        <Collapse open={collapse}>
+          <table className="table" style={{ marginTop: 5, fontSize: 10, width: '80%' }}>
+            {d.qualities.map((q, i) => (
+              <tr key={i}>
+                <td width="30%">{q.name}</td>
+                <td>{prettyBytes(parseInt(q.size, 10))}</td>
+                <td>
+                  <ButtonGroup size="sm">
+                    <Button theme="success" onClick={() => {
+                      window.open(process.env.REACT_APP_API_URL + '/download/' + q.id + '?source=internal', '_blank');
+                    }}>Ambil</Button>
+                    <Button theme="info" onClick={() => {
+                      copy(process.env.REACT_APP_API_URL + '/download/' + q.id);
+                      store.addNotification({
+                        title: 'Link Tersalin',
+                        message: 'Link sudah tersalin ke clipboard',
+                        type: 'success',
+                        insert: 'top',
+                        container: 'top-right',
+                        animationIn: ["animate__animated", "animate__fadeIn"],
+                        animationOut: ["animate__animated", "animate__fadeOut"],
+                        dismiss: {
+                          duration: 1000,
+                          onScreen: true
+                        }
+                      });
+                    }}>Salin Link</Button>
+                  </ButtonGroup>
+                </td>
+              </tr>
+            ))}
+          </table>
+        </Collapse>
       </div>
     )
   }
