@@ -171,7 +171,7 @@ export default class Dashboard extends React.Component {
                               });
                             }}>Salin Link</Button>
                             <Button theme="danger" disabled={d.id === deleting} onClick={() => {
-                              const c = confirm('Anda yakin ingin membuang setoran ini?');
+                              const c = window.confirm('Anda yakin ingin membuang setoran ini?');
                               if (c) {
                                 this.setState({ deleting: d.id }, async () => {
                                   await client.service('files').remove(d.id);
