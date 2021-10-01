@@ -171,10 +171,13 @@ export default class Dashboard extends React.Component {
                               });
                             }}>Salin Link</Button>
                             <Button theme="danger" disabled={d.id === deleting} onClick={() => {
-                              this.setState({ deleting: d.id }, async () => {
-                                await client.service('files').remove(d.id);
-                                this.setState({ deleting: null });
-                              });
+                              const c = confirm('Anda yakin ingin membuang setoran ini?');
+                              if (c) {
+                                this.setState({ deleting: d.id }, async () => {
+                                  await client.service('files').remove(d.id);
+                                  this.setState({ deleting: null });
+                                });
+                              }
                             }}>Buang</Button>
                           </ButtonGroup>
                         </td>
