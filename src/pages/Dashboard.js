@@ -31,6 +31,7 @@ import copy from 'clipboard-copy';
 import { store } from 'react-notifications-component';
 import prettyBytes from 'pretty-bytes';
 import isVideo from 'is-video';
+import PercentageCircle from 'reactjs-percentage-circle';
 
 export default class Dashboard extends React.Component {
   state = {
@@ -40,7 +41,8 @@ export default class Dashboard extends React.Component {
     uploadProgress: null,
     limit: 10,
     page: 1,
-    deleting: null
+    deleting: null,
+    specs: {}
   }
   async componentDidMount() {
     const { client } = this.props;
@@ -52,6 +54,7 @@ export default class Dashboard extends React.Component {
       this.fetch(q);
     });
     await this.fetch(this.state.q);
+    await this.getSpecs();
   }
   async fetch(q) {
     const { client } = this.props;
@@ -94,14 +97,23 @@ export default class Dashboard extends React.Component {
       alert(e.message);
     }
   }
+  async getSpecs() {
+    const { client } = this.props;
+    const { specs } = this.state;
+    const mem = await client.service('specs').get('mem');
+    specs = { mem };
+    this.setState({ specs });
+  }
   render() {
     const { client } = this.props;
-    const { files, uploadProgress, q, limit, page, deleting } = this.state;
+    const { files, uploadProgress, q, limit, page, deleting, specs } = this.state;
+    console.log(specs);
     return (
       <div style={{ maxWidth: 1100, margin: '30px auto' }}>
         <Card>
           <CardHeader>Lumbung Tani Dashboard</CardHeader>
           <CardBody>
+
             <div style={{ marginBottom: 20 }}>
               <Navbar style={{ padding: 0 }} expand="md">
                 <Collapse navbar>
