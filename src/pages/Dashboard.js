@@ -168,7 +168,7 @@ export default class Dashboard extends React.Component {
                                   </td>
                                   <td>{prettyBytes(parseInt(d.size, 10))}</td>
                                   <td>{d.user.username}</td>
-                                  <td style={{ width: '25%' }}>
+                                  <td style={{ width: '10%' }}>
                                     <ButtonGroup size="sm">
                                       <Button theme="success" onClick={() => {
                                         window.open(process.env.REACT_APP_API_URL + '/download/' + d.id + '?source=internal', '_blank');
