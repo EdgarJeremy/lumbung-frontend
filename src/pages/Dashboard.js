@@ -23,7 +23,7 @@ import {
   Progress,
   Badge
 } from "shards-react";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faDownload, faCopy, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import axios from 'axios';
@@ -31,7 +31,8 @@ import copy from 'clipboard-copy';
 import { store } from 'react-notifications-component';
 import prettyBytes from 'pretty-bytes';
 import isVideo from 'is-video';
-import PercentageCircle from 'reactjs-percentage-circle';
+import { PieChart } from 'react-minimal-pie-chart';
+import { Line, Circle } from 'rc-progress';
 
 export default class Dashboard extends React.Component {
   state = {
@@ -54,7 +55,7 @@ export default class Dashboard extends React.Component {
       this.fetch(q);
     });
     await this.fetch(this.state.q);
-    await this.getSpecs();
+    setInterval(this.getSpecs.bind(this), 1000);
   }
   async fetch(q) {
     const { client } = this.props;
@@ -99,9 +100,11 @@ export default class Dashboard extends React.Component {
   }
   async getSpecs() {
     const { client } = this.props;
-    const { specs } = this.state;
+    let { specs } = this.state;
     const mem = await client.service('specs').get('mem');
-    specs = { mem };
+    const cpu = await client.service('specs').get('cpu');
+    const disk = await client.service('specs').get('disk');
+    specs = { mem, cpu, disk };
     this.setState({ specs });
   }
   render() {
@@ -109,11 +112,10 @@ export default class Dashboard extends React.Component {
     const { files, uploadProgress, q, limit, page, deleting, specs } = this.state;
     console.log(specs);
     return (
-      <div style={{ maxWidth: 1100, margin: '30px auto' }}>
+      <div style={{ maxWidth: '95%', margin: '30px auto' }}>
         <Card>
           <CardHeader>Lumbung Tani Dashboard</CardHeader>
           <CardBody>
-
             <div style={{ marginBottom: 20 }}>
               <Navbar style={{ padding: 0 }} expand="md">
                 <Collapse navbar>
@@ -135,85 +137,127 @@ export default class Dashboard extends React.Component {
                 </Collapse>
               </Navbar>
             </div>
-            {files ? (
-              files.total ?
-                (<table className="table">
-                  <thead>
-                    <tr>
-                      <th>Nama</th>
-                      <th>Ukuran</th>
-                      <th>Taniers</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {files.data.map((d, i) => (
-                      <tr key={i}>
-                        <td>
-                          <div>
-                            {(() => {
-                              const name = d.name.split('.');
-                              const ext = name[name.length - 1].toLowerCase();
-                              return <FileIcon extension={ext} {...defaultStyles[ext]} />
-                            })()} <span style={{ marginLeft: 10 }}>{d.name}</span>
-                          </div>
-                          {isVideo(d.name) && (<Qualities d={d} />)}
-                        </td>
-                        <td>{prettyBytes(parseInt(d.size, 10))}</td>
-                        <td>{d.user.username}</td>
-                        <td style={{ width: '25%' }}>
-                          <ButtonGroup size="sm">
-                            <Button theme="success" onClick={() => {
-                              window.open(process.env.REACT_APP_API_URL + '/download/' + d.id + '?source=internal', '_blank');
-                            }}>Ambil</Button>
-                            <Button theme="info" onClick={() => {
-                              copy(process.env.REACT_APP_API_URL + '/download/' + d.id);
-                              store.addNotification({
-                                title: 'Link Tersalin',
-                                message: 'Link sudah tersalin ke clipboard',
-                                type: 'success',
-                                insert: 'top',
-                                container: 'top-right',
-                                animationIn: ["animate__animated", "animate__fadeIn"],
-                                animationOut: ["animate__animated", "animate__fadeOut"],
-                                dismiss: {
-                                  duration: 1000,
-                                  onScreen: true
-                                }
-                              });
-                            }}>Salin Link</Button>
-                            <Button theme="danger" disabled={d.id === deleting} onClick={() => {
-                              const c = window.confirm('Anda yakin ingin membuang setoran ini?');
-                              if (c) {
-                                this.setState({ deleting: d.id }, async () => {
-                                  await client.service('files').remove(d.id);
-                                  this.setState({ deleting: null });
-                                });
-                              }
-                            }}>Buang</Button>
-                          </ButtonGroup>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <div style={{ marginTop: 20, display: 'inline-block', width: 300 }}>
-                      <FormSelect size="sm" style={{ width: '30%' }} value={limit} onChange={(e) => this.setState({ limit: e.target.value, page: 1 }, () => this.fetch(q))}>
-                        <option value={10}>10</option>
-                        <option value={30}>30</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </FormSelect>{' '}
-                      <ButtonGroup style={{ display: 'inline-block' }} size="sm">
-                        <Button disabled={page === 1} onClick={() => this.setState({ page: page - 1 }, () => this.fetch(q))}>{'<'}</Button>
-                        <Button disabled={page === Math.ceil(files.total / limit)} onClick={() => this.setState({ page: page + 1 }, () => this.fetch(q))}>{'>'}</Button>
-                      </ButtonGroup>
-                      <span>{' '}Halaman {page} dari {Math.ceil(files.total / limit)}</span>
-                    </div>
-                  </tfoot>
-                </table>
-                ) : <div style={{ textAlign: 'center', marginTop: 20 }}>Lumbung kosong...</div>
-            ) : (<p style={{ textAlign: 'center', marginTop: 20 }}>Membuka lumbung...</p>)}
+            <div className="row">
+              <div className="col-md-10">
+                <Card>
+                  <CardBody>
+                    {files ? (
+                      files.total ?
+                        (
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>Nama</th>
+                                <th>Ukuran</th>
+                                <th>Taniers</th>
+                                <th></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {files.data.map((d, i) => (
+                                <tr key={i}>
+                                  <td>
+                                    <div>
+                                      {(() => {
+                                        const name = d.name.split('.');
+                                        const ext = name[name.length - 1].toLowerCase();
+                                        return <FileIcon extension={ext} {...defaultStyles[ext]} />
+                                      })()} <span style={{ marginLeft: 10 }}>{d.name}</span>
+                                    </div>
+                                    {isVideo(d.name) && (<Qualities d={d} />)}
+                                  </td>
+                                  <td>{prettyBytes(parseInt(d.size, 10))}</td>
+                                  <td>{d.user.username}</td>
+                                  <td style={{ width: '25%' }}>
+                                    <ButtonGroup size="sm">
+                                      <Button theme="success" onClick={() => {
+                                        window.open(process.env.REACT_APP_API_URL + '/download/' + d.id + '?source=internal', '_blank');
+                                      }}><FontAwesomeIcon icon={faDownload} /></Button>
+                                      <Button theme="info" onClick={() => {
+                                        copy(process.env.REACT_APP_API_URL + '/download/' + d.id);
+                                        store.addNotification({
+                                          title: 'Link Tersalin',
+                                          message: 'Link sudah tersalin ke clipboard',
+                                          type: 'success',
+                                          insert: 'top',
+                                          container: 'top-right',
+                                          animationIn: ["animate__animated", "animate__fadeIn"],
+                                          animationOut: ["animate__animated", "animate__fadeOut"],
+                                          dismiss: {
+                                            duration: 1000,
+                                            onScreen: true
+                                          }
+                                        });
+                                      }}><FontAwesomeIcon icon={faCopy} /></Button>
+                                      <Button theme="danger" disabled={d.id === deleting} onClick={() => {
+                                        const c = window.confirm('Anda yakin ingin membuang setoran ini?');
+                                        if (c) {
+                                          this.setState({ deleting: d.id }, async () => {
+                                            await client.service('files').remove(d.id);
+                                            this.setState({ deleting: null });
+                                          });
+                                        }
+                                      }}><FontAwesomeIcon icon={faTrash} /></Button>
+                                    </ButtonGroup>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <div style={{ marginTop: 20, display: 'inline-block', width: 300 }}>
+                                <FormSelect size="sm" style={{ width: '30%' }} value={limit} onChange={(e) => this.setState({ limit: e.target.value, page: 1 }, () => this.fetch(q))}>
+                                  <option value={10}>10</option>
+                                  <option value={30}>30</option>
+                                  <option value={50}>50</option>
+                                  <option value={100}>100</option>
+                                </FormSelect>{' '}
+                                <ButtonGroup style={{ display: 'inline-block' }} size="sm">
+                                  <Button disabled={page === 1} onClick={() => this.setState({ page: page - 1 }, () => this.fetch(q))}>{'<'}</Button>
+                                  <Button disabled={page === Math.ceil(files.total / limit)} onClick={() => this.setState({ page: page + 1 }, () => this.fetch(q))}>{'>'}</Button>
+                                </ButtonGroup>
+                                <span>{' '}Halaman {page} dari {Math.ceil(files.total / limit)}</span>
+                              </div>
+                            </tfoot>
+                          </table>
+                        ) : <div style={{ textAlign: 'center', marginTop: 20 }}>Lumbung kosong...</div>
+                    ) : (<p style={{ textAlign: 'center', marginTop: 20 }}>Membuka lumbung...</p>)}
+                  </CardBody>
+                </Card>
+              </div>
+              <div className="col-md-2">
+                <Card>
+                  <CardBody>
+                    {specs.cpu && (
+                      <div style={{ position: 'relative', marginBottom: 10 }}>
+                        <div style={{ textAlign: 'center', position: 'absolute', left: 0, right: 0, marginLeft: 'auto', marginRight: 'auto', top: '50%', transform: 'translateY(-50%)' }}>
+                          <div style={{ fontWeight: 'bold' }}>CPU</div>
+                          <div>({specs.cpu.percentage}%)</div>
+                        </div>
+                        <Circle strokeWidth={3} percent={specs.cpu.percentage} />
+                      </div>
+                    )}
+                    {specs.mem && (
+                      <div style={{ position: 'relative', marginBottom: 10 }}>
+                        <div style={{ textAlign: 'center', position: 'absolute', left: 0, right: 0, marginLeft: 'auto', marginRight: 'auto', top: '50%', transform: 'translateY(-50%)' }}>
+                          <div style={{ fontWeight: 'bold' }}>RAM</div>
+                          <div>({specs.mem.percentage}%)</div>
+                        </div>
+                        <Circle strokeWidth={3} percent={specs.mem.percentage} />
+                      </div>
+                    )}
+                    {specs.disk && (
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ textAlign: 'center', position: 'absolute', left: 0, right: 0, marginLeft: 'auto', marginRight: 'auto', top: '50%', transform: 'translateY(-50%)' }}>
+                          <div style={{ fontWeight: 'bold' }}>Storage</div>
+                          <div>({specs.disk.percentage}%)</div>
+                        </div>
+                        <Circle strokeWidth={3} percent={specs.disk.percentage} />
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              </div>
+            </div>
           </CardBody>
           <CardFooter>Copyright &copy; {new Date().getFullYear()} <a href="http://ladangtani.info">ladangtani.info</a></CardFooter>
         </Card>
