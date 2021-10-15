@@ -305,7 +305,7 @@ class Qualities extends React.Component {
                   <ButtonGroup size="sm">
                     <Button theme="success" onClick={() => {
                       window.open(process.env.REACT_APP_API_URL + '/download/' + q.id + '?source=internal', '_blank');
-                    }}>Ambil</Button>
+                    }}><FontAwesomeIcon icon={faDownload} /></Button>
                     <Button theme="info" onClick={() => {
                       copy(process.env.REACT_APP_API_URL + '/download/' + q.id);
                       store.addNotification({
@@ -321,7 +321,7 @@ class Qualities extends React.Component {
                           onScreen: true
                         }
                       });
-                    }}>Salin Link</Button>
+                    }}><FontAwesomeIcon icon={faCopy} /></Button>
                   </ButtonGroup>
                 </td>
               </tr>
